@@ -6,7 +6,7 @@ global.document = window.document;
 global.window = window;
 
 // Import the AutoLinkEditor code
-require('./editor');
+require('.');
 
 describe('AutoLinkEditor', () => {
   beforeEach(() => {
@@ -22,8 +22,8 @@ describe('AutoLinkEditor', () => {
     // DOMContentLoaded_event.initEvent("DOMContentLoaded", true, true);
     // window.document.dispatchEvent(DOMContentLoaded_event);
 
-    const event = new Event("DOMContentLoaded");
-    window.dispatchEvent(event);
+    // const event = new Event("DOMContentLoaded");
+    // window.dispatchEvent(event);
     
     const editorDiv = document.getElementById('editor');
     expect(editorDiv.contentEditable).toBe(true);

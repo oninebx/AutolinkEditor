@@ -1,3 +1,5 @@
+import hyperlinkGenerator from './HyperlinkGenerator';
+
 const handleTest = (e) => {
   const selection = window.getSelection();
       if (selection.rangeCount > 0) {
@@ -10,9 +12,6 @@ const handleTest = (e) => {
       }
 }
 
-
-
-const hyperlinkGenerator = require('./HyperlinkGenerator');
 
 window.AutoLinkEditor = (() => {
   const URLRegex = /(https?:\/\/(([a-zA-Z0-9]+-?)+[a-zA-Z0-9]+\.)+(([a-zA-Z0-9]+-?)+[a-zA-Z0-9]+))(:\d+)?(\/.*)?(\?.*)?(#.*)?/g;
@@ -72,11 +71,13 @@ window.AutoLinkEditor = (() => {
                   targetNode = nodes[nodes.length - 2];
                   if(targetNode.nodeType === 1) { // div element
                     targetNode.remove();
-                    let text = document.createTextNode(targetNode.innerText);
-                    let br = document.createElement('br');
-                    editorDiv.insertBefore(text, nodes[nodes.length - 1]);
-                    editorDiv.insertBefore(br, text);
+                    const text = hyperlinkGenerator.convertDivToTextWithBr(targetNode);
+                    // let text = document.createTextNode(targetNode.innerText);
+                    // let br = document.createElement('br');
+                    // editorDiv.insertBefore(text, nodes[nodes.length - 1]);
+                    // editorDiv.insertBefore(br, text);
                     targetNode = text;
+                    editorDiv.insertBefore(text, nodes[nodes.length - 1]);
                   }
                   // if(targetNode.nodeType === 3){ // text
                   //   editorDiv.removeChild(targetNode);

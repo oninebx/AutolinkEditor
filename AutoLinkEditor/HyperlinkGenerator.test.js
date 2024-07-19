@@ -1,5 +1,7 @@
 // Import the HyperlinkGenerator module
-const hyperlinkGenerator = require('./HyperlinkGenerator');
+// const hyperlinkGenerator = require('./HyperlinkGenerator');
+import hyperlinkGenerator from './HyperlinkGenerator';
+
 // Mock the DOM environment using JSDOM
 const { JSDOM } = require('jsdom');
 const { document } = new JSDOM('<!doctype html><html><body></body></html>').window;

@@ -1,6 +1,4 @@
-const { error } = require("console");
-
-URLRegex = /^(https?:\/\/(([a-zA-Z0-9]+-?)+[a-zA-Z0-9]+\.)+(([a-zA-Z0-9]+-?)+[a-zA-Z0-9]+))(:\d+)?(\/.*)?(\?.*)?(#.*)?$/;
+const URLRegex = /^(https?:\/\/(([a-zA-Z0-9]+-?)+[a-zA-Z0-9]+\.)+(([a-zA-Z0-9]+-?)+[a-zA-Z0-9]+))(:\d+)?(\/.*)?(\?.*)?(#.*)?$/;
 
 const HyperlinkGenerator = (() => ({
   createLink: url => {
@@ -14,7 +12,14 @@ const HyperlinkGenerator = (() => ({
     link.href = url;
     link.text = url;
     return link;
+  },
+  convertDivToTextWithBr: (divNode) => {
+    const fragment = document.createDocumentFragment();
+    const text = document.createTextNode(divNode.innerText);
+    const br = document.createElement('br');
+    fragment.append(br, text);
+    return fragment;
   }
 }))();
 
-module.exports = HyperlinkGenerator;
+export default HyperlinkGenerator;
