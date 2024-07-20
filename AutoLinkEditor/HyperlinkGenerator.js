@@ -1,6 +1,6 @@
 const URLRegex = /^(https?:\/\/(([a-zA-Z0-9]+-?)+[a-zA-Z0-9]+\.)+(([a-zA-Z0-9]+-?)+[a-zA-Z0-9]+))(:\d+)?(\/.*)?(\?.*)?(#.*)?$/;
 
-const HyperlinkGenerator = (() => ({
+const hyperlinkGenerator = (() => ({
   createLink: url => {
     if(typeof url !== "string" || url.trim() === ""){
       throw Error("create hyperlink failed: the url is undefined, null, empty or not a string");
@@ -22,4 +22,4 @@ const HyperlinkGenerator = (() => ({
   }
 }))();
 
-export default HyperlinkGenerator;
+export default hyperlinkGenerator;

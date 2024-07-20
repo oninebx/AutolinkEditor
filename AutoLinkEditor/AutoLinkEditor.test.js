@@ -6,7 +6,7 @@ global.document = window.document;
 global.window = window;
 
 // Import the AutoLinkEditor code
-require('.');
+import  './index';
 
 describe('AutoLinkEditor', () => {
   beforeEach(() => {
