@@ -1,5 +1,3 @@
-import hyperlinkGenerator from './HyperlinkGenerator';
-
 const initializer = (() => ({
   setup: target => {
     if(target && target.contentEditable){

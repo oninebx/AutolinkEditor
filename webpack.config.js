@@ -2,7 +2,7 @@ const path = require('path');
 
 module.exports = {
   entry: {
-    'auto-link-editor': './AutoLinkEditor/index.js'
+    'auto-link-editor': './AutoLinkEditor/src/index.js'
   },
   output: {
     filename: '[name].bundle.js',

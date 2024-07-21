@@ -1,6 +1,6 @@
 // Import the HyperlinkGenerator module
 // const hyperlinkGenerator = require('./HyperlinkGenerator');
-import hyperlinkGenerator from './HyperlinkGenerator';
+import hyperlinkGenerator from '../src/HyperlinkGenerator';
 
 // Mock the DOM environment using JSDOM
 const { JSDOM } = require('jsdom');
@@ -117,5 +117,43 @@ describe('HyperlinkGenerator', () => {
       });
     });
 
+  });
+
+describe('extractTextWithAnchors', () => {
+
+  it('should extract text from a text node', () => {
+    const textNode = document.createTextNode('Hello, world!');
+    expect(hyperlinkGenerator.extractTextWithAnchors(textNode)).toBe('Hello, world!');
+  });
+
+  it('should extract text and preserve <a> tags', () => {
+    const div = document.createElement('div');
+    div.innerHTML = 'This is a <a href="#">link</a> and some text.';
+    expect(hyperlinkGenerator.extractTextWithAnchors(div))
+        .toBe('This is a <a href="#">link</a> and some text.');
+  });
+
+  it('should handle nested elements with text and <a> tags', () => {
+      const div = document.createElement('div');
+      div.innerHTML = '<p>This is a <a href="#">link</a> inside a paragraph.</p>';
+      expect(hyperlinkGenerator.extractTextWithAnchors(div))
+          .toBe('This is a <a href="#">link</a> inside a paragraph.');
+  });
+
+  it('should throw an error for null or undefined nodes', () => {
+      expect(() => hyperlinkGenerator.extractTextWithAnchors(null)).toThrowError('extract text failed: the node is undefined, null or not a node');
+      expect(() => hyperlinkGenerator.extractTextWithAnchors(undefined)).toThrowError('extract text failed: the node is undefined, null or not a node');
+  });
+
+  it('should throw an error for non-element and non-text nodes', () => {
+      const commentNode = document.createComment('This is a comment');
+      expect(() => hyperlinkGenerator.extractTextWithAnchors(commentNode)).toThrowError('extract text failed: the node is not text or element');
+  });
+
+  it('should throw an error if the node is not a valid node', () => {
+    expect(() => hyperlinkGenerator.extractTextWithAnchors({})).toThrow("extract text failed: the node is undefined, null or not a node");
+  });
+
+ 
   });
 });

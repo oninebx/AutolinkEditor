@@ -1,20 +1,23 @@
 import initializer from './Initializer';
-
+import hyperlinkGenerator from './HyperlinkGenerator';
 
 
 window.AutoLinkEditor = (() => {
   return {
-    init: (id) => {
+    divBox: document.createElement("div"),
+    init: function(id) {
       if(id){
         const target = document.getElementById(id);
         try{
           initializer.setup(target);
-          const handleKeyup = (e) => {
-            console.log(e.keyCode);
-          }
-          const idleHandler = initializer.idle(handleKeyup);
+          const handleKeyup = initializer.idle(e => {
+            let targetText = hyperlinkGenerator.extractTextWithAnchors(target);
+            this.divBox.innerHTML = targetText;
+            console.log(this.divBox.childNodes);
+            target.innerHTML = targetText;
+          });
           
-          target.onkeyup = idleHandler;
+          target.onkeyup = handleKeyup;
         }catch(e){
           console.error(e);
         }

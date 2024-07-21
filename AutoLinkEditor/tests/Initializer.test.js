@@ -1,4 +1,4 @@
-import initializer from './Initializer';
+import initializer from '../src/Initializer';
 const { JSDOM } = require('jsdom');
 
 // Mock the DOM environment using JSDOM
