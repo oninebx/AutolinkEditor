@@ -14,32 +14,40 @@ const initializer = (() => ({
   timer: null,
   idle(func, delay) {
     const idleHandler = function() {
-      const args = arguments;
       if(this.timer){
         clearTimeout(this.timer);
         this.timer = null;
       }
       this.timer = setTimeout(() => {
-        func(...args);
+        func(...arguments);
         this.timer = null;
       }, delay??1000);
       
     };
     return idleHandler.bind(this);
+  },
+  saveSelection: target => {
+    if(target) {
+      if(window.getSelection) {
+        const range = window.getSelection().getRangeAt(0);
+        var preSelectionRange = range.cloneRange();
+        preSelectionRange.selectNodeContents(target);
+        preSelectionRange.setEnd(range.startContainer, range.startOffset);
+        var start = preSelectionRange.toString().length;
+        
+        return {
+            start: start,
+            end: start + range.toString().length
+        }
+      }else{
+        throw Error("save selection failed: the browser doesn't support getSelection function");
+      }
+      
+    }else{
+      throw Error("save selection failed: the target element is null or undefined");
+    }
+    
   }
 }))();
-
-/**
- *     var keyTimer = null, keyDelay = 1000;
-    $("#textbox").keyup(function() {
-        if (keyTimer) {
-            window.clearTimeout(keyTimer);
-        }
-        keyTimer = window.setTimeout(function() {
-            updateLinks();
-            keyTimer = null;
-        }, keyDelay);
-    });
- */
 
 export default initializer;

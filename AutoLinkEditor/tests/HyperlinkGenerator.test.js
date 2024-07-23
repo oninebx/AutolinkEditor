@@ -119,7 +119,7 @@ describe('HyperlinkGenerator', () => {
 
   });
 
-describe('extractTextWithAnchors', () => {
+  describe('extractTextWithAnchors', () => {
 
   it('should extract text from a text node', () => {
     const textNode = document.createTextNode('Hello, world!');
