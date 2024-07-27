@@ -4,20 +4,15 @@ import hyperlinkGenerator from './HyperlinkGenerator';
 
 window.AutoLinkEditor = (() => {
   return {
-    divBox: document.createElement("div"),
     init: function(id) {
       if(id){
         const target = document.getElementById(id);
         try{
-
           initializer.setup(target);
           const handleKeyup = initializer.idle(e => {
-            let targetText = hyperlinkGenerator.extractTextWithAnchors(target);
-            this.divBox.innerHTML = targetText;
-            const position = initializer.saveSelection(target);
-            console.log(position);
-            // console.log(window.getSelection().getRangeAt(0));
-            // target.innerHTML = targetText;
+            const position = hyperlinkGenerator.saveSelection(target);
+            target.innerHTML= hyperlinkGenerator.extractTextWithAnchors(target);
+            hyperlinkGenerator.restoreSelection(target, position);
           });
           
           target.onkeyup = handleKeyup;

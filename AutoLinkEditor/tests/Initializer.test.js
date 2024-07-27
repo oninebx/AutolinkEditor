@@ -126,47 +126,4 @@ describe('initializer', () => {
       expect(initializer.timer).toBeNull();
     });
   });
-
-  describe('saveSelection', () => {
-    beforeAll(() => {
-      // Setup DOM environment
-      const dom = new JSDOM(`<!DOCTYPE html><body><div id="editable" contenteditable="true">Hello, this is a test.</div></body>`);
-      global.document = dom.window.document;
-      global.window = dom.window;
-      global.getSelection = dom.window.getSelection;
-    });
-
-    it('saves selection range correctly', () => {
-      const editableDiv = document.getElementById('editable');
-      const range = document.createRange();
-      const selection = window.getSelection();
-
-      range.setStart(editableDiv.firstChild, 7);
-      range.setEnd(editableDiv.firstChild, 11);
-      selection.removeAllRanges();
-      selection.addRange(range);
-
-      const result = initializer.saveSelection(editableDiv);
-      expect(result).toEqual({ start: 7, end: 11 });
-    });
-
-    it('throws error when target is null', () => {
-      expect(() => {
-          initializer.saveSelection(null);
-      }).toThrow("save selection failed: the target element is null or undefined");
-    });
-
-    it('throws error when getSelection is not supported', () => {
-      const originalGetSelection = window.getSelection;
-      delete window.getSelection;
-
-      expect(() => {
-          const editableDiv = document.getElementById('editable');
-          initializer.saveSelection(editableDiv);
-      }).toThrow("save selection failed: the browser doesn't support getSelection function");
-
-      window.getSelection = originalGetSelection; // Restore original function
-    });
-
-  });
 });

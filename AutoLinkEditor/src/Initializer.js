@@ -25,28 +25,6 @@ const initializer = (() => ({
       
     };
     return idleHandler.bind(this);
-  },
-  saveSelection: target => {
-    if(target) {
-      if(window.getSelection) {
-        const range = window.getSelection().getRangeAt(0);
-        var preSelectionRange = range.cloneRange();
-        preSelectionRange.selectNodeContents(target);
-        preSelectionRange.setEnd(range.startContainer, range.startOffset);
-        var start = preSelectionRange.toString().length;
-        
-        return {
-            start: start,
-            end: start + range.toString().length
-        }
-      }else{
-        throw Error("save selection failed: the browser doesn't support getSelection function");
-      }
-      
-    }else{
-      throw Error("save selection failed: the target element is null or undefined");
-    }
-    
   }
 }))();
 
