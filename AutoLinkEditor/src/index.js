@@ -1,5 +1,5 @@
 import initializer from './Initializer';
-import hyperlinkGenerator from './HyperlinkGenerator';
+import { contentConvertor, nodeHandler} from './HyperlinkGenerator';
 
 
 window.AutoLinkEditor = (() => {
@@ -10,9 +10,9 @@ window.AutoLinkEditor = (() => {
         try{
           initializer.setup(target);
           const handleKeyup = initializer.idle(e => {
-            const position = hyperlinkGenerator.saveSelection(target);
-            target.innerHTML= hyperlinkGenerator.extractTextWithAnchors(target);
-            hyperlinkGenerator.restoreSelection(target, position);
+            const position = contentConvertor.saveSelection(target);
+            target.innerHTML= contentConvertor.extractTextAndAnchor(target, nodeHandler.handleText);
+            contentConvertor.restoreSelection(target, position);
           });
           
           target.onkeyup = handleKeyup;

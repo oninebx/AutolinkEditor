@@ -7,7 +7,6 @@ describe('NodeHandler', () => {
   describe('createLink', () => {
     beforeAll(() => {
       // Mock the DOM environment using JSDOM
-      
       const { document } = new JSDOM('<!doctype html><html><body></body></html>').window;
       global.document = document;
     });
@@ -120,46 +119,114 @@ describe('NodeHandler', () => {
     });
 
   });
+
+  describe('HandleText', () => {
+    it('should convert URLs in text to anchor tags', () => {
+      const input = 'Check this out: http://example.com and also https://example.org.';
+      const expected = 'Check this out: <a href="http://example.com">http://example.com</a> and also <a href="https://example.org">https://example.org</a>.';
+      expect(nodeHandler.handleText(input)).toBe(expected);
+    });
+
+    const invalidStrings = [
+      null,
+      undefined,
+      123,
+      true,
+      {},
+      [],
+      () => {},
+      Symbol('text')
+    ];
+
+    invalidStrings.forEach(text => {
+      it(`should throw error if ${JSON.stringify(text)} is not a string`, () => {
+        expect(() => {
+          nodeHandler.handleText(text);
+        }).toThrow("handleText failed: input is not a string");
+      });
+    });
+  
+    it('should escape HTML entities in text', () => {
+      const input = 'This is a test with special characters: & < > " \'';
+      const expected = 'This is a test with special characters: &amp; &lt; &gt; &quot; &#39;';
+      expect(nodeHandler.handleText(input)).toBe(expected);
+    });
+  
+    it('should handle text with no URLs correctly', () => {
+      const input = 'This is a test with no URLs.';
+      const expected = 'This is a test with no URLs.';
+      expect(nodeHandler.handleText(input)).toBe(expected);
+    });
+  
+    it('should handle text with multiple URLs correctly', () => {
+      const input = 'First URL: http://example.com. Second URL: https://example.org.';
+      const expected = 'First URL: <a href="http://example.com">http://example.com</a>. Second URL: <a href="https://example.org">https://example.org</a>.';
+      expect(nodeHandler.handleText(input)).toBe(expected);
+    });
+  })
 });
 
 describe('ContentConvertor', () => {
   describe('extractTextAndAnchor', () => {
 
+    beforeAll(() => {
+      // Mock the DOM environment using JSDOM
+      const { document } = new JSDOM('<!doctype html><html><body></body></html>').window;
+      global.document = document;
+    });
+    const mockHandleText = text => text.toUpperCase();
+
+    it('should throw error if node is undefined', () => {
+      expect(() => contentConvertor.extractTextAndAnchor(undefined)).toThrow("extract text and anchors failed: the node is undefined, null or not a node");
+    });
+
+    it('should throw error if node is null', () => {
+      expect(() => contentConvertor.extractTextAndAnchor(null)).toThrow("extract text and anchors failed: the node is undefined, null or not a node");
+    });
+  
+    it('should throw error if node is not text or element node', () => {
+      const commentNode = document.createComment("This is a comment");
+      expect(() => contentConvertor.extractTextAndAnchor(commentNode)).toThrow("extract text and anchors failed: the node is not text or element");
+    });
+  
+    it('should throw error if handleText is not a function', () => {
+      const div = document.createElement('div');
+      expect(() => contentConvertor.extractTextAndAnchor(div, "not a function")).toThrow("extract text and anchors failed: handleText function is missing");
+    });
+
     it('should extract text from a text node', () => {
       const textNode = document.createTextNode('Hello, world!');
       expect(contentConvertor.extractTextAndAnchor(textNode)).toBe('Hello, world!');
     });
-  
-    it('should extract text and preserve <a> tags', () => {
+
+    it('should handle anchor elements correctly', () => {
       const div = document.createElement('div');
-      div.innerHTML = 'This is a <a href="#">link</a> and some text.';
-      expect(contentConvertor.extractTextAndAnchor(div))
-          .toBe('This is a <a href="#">link</a> and some text.');
+      div.innerHTML = '<a href="https://example.com">Example</a>';
+      expect(contentConvertor.extractTextAndAnchor(div)).toBe('<a href="https://example.com">Example</a>');
     });
-  
-    it('should handle nested elements with text and <a> tags', () => {
-        const div = document.createElement('div');
-        div.innerHTML = '<p>This is a <a href="#">link</a> inside a paragraph.</p>';
-        expect(contentConvertor.extractTextAndAnchor(div))
-            .toBe('This is a <a href="#">link</a> inside a paragraph.');
+
+    it('should handle nested elements correctly', () => {
+      const div = document.createElement('div');
+      div.innerHTML = 'Text before <a href="https://example.com">Example</a> text after';
+      expect(contentConvertor.extractTextAndAnchor(div)).toBe('Text before <a href="https://example.com">Example</a> text after');
     });
-  
-    it('should throw an error for null or undefined nodes', () => {
-        expect(() => contentConvertor.extractTextAndAnchor(null)).toThrowError('extract text and anchors failed: the node is undefined, null or not a node');
-        expect(() => contentConvertor.extractTextAndAnchor(undefined)).toThrowError('extract text and anchors failed: the node is undefined, null or not a node');
-    });
-  
-    it('should throw an error for non-element and non-text nodes', () => {
-        const commentNode = document.createComment('This is a comment');
-        expect(() => contentConvertor.extractTextAndAnchor(commentNode)).toThrowError('extract text and anchors failed: the node is not text or element');
+
+    test('should handle text transformation with handleText function', () => {
+      const div = document.createElement('div');
+      div.innerHTML = 'Text before <a href="https://example.com">Example</a> text after';
+      expect(contentConvertor.extractTextAndAnchor(div, mockHandleText)).toBe('TEXT BEFORE <a href="https://example.com">Example</a> TEXT AFTER');
     });
   
     it('should throw an error if the node is not a valid node', () => {
       expect(() => contentConvertor.extractTextAndAnchor({})).toThrow("extract text and anchors failed: the node is undefined, null or not a node");
     });
   
-   
+    test('should handle deeply nested structures', () => {
+      const div = document.createElement('div');
+      div.innerHTML = '<div>Level 1<div>Level 2<a href="https://example.com">Example</a>Level 2 end</div>Level 1 end</div>';
+      expect(contentConvertor.extractTextAndAnchor(div)).toBe('Level 1Level 2<a href="https://example.com">Example</a>Level 2 endLevel 1 end');
     });
+  });
   
     describe('saveSelection', () => {
       beforeAll(() => {
