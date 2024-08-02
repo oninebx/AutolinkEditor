@@ -32,6 +32,22 @@ const nodeHandler = (() => {
       result += escapeHtml(textContent); // Append any remaining text
       return result;
     },
+    handleAnchor: anchor => {
+      if(anchor && anchor instanceof HTMLAnchorElement){
+        console.log(anchor);
+      }
+      
+      return anchor.outerHTML;
+      // if(anchor) {
+      //   const text = anchor.textContent;
+      //   if(URLRegex.test(text)){
+      //     return anchor.outerHTML;
+      //   }else {
+      //     return anchor.innerHtml;
+      //   }
+      // }
+      // return "";
+    },
     createLink: url => {
       if(typeof url !== "string" || url.trim() === ""){
         throw Error("create hyperlink failed: the url is undefined, null, empty or not a string");
@@ -70,6 +86,9 @@ const nodeHandler = (() => {
     }
   },
   restoreSelection: (target, position) => {
+    // FIXME: Keep the right position for special key, tab, whitspace and enter
+
+    
     if(!target || !(target.nodeType === 1 || target.nodeType === 3)) {
       throw Error("restore selection failed: target must be an html element or text node");
     }
@@ -118,7 +137,7 @@ const nodeHandler = (() => {
     }
 
   },
-  extractTextAndAnchor(node, handleText = text => text) {
+  extractTextAndAnchor(node, handleText = text => text, handleAnchor = anchor => anchor.outerHTML) {
     if(!node || !node.nodeType) {
       throw Error("extract text and anchors failed: the node is undefined, null or not a node");
     }
@@ -138,7 +157,8 @@ const nodeHandler = (() => {
       } else if (child.nodeType === 1) { 
         if(child.tagName === 'A') { // anchar element
           // TODO: check the url is illegal
-          result += child.outerHTML;
+          // result += child.outerHTML;
+          result += handleAnchor(child);
         }else { // other elements
           result += this.extractTextAndAnchor(child);
         }

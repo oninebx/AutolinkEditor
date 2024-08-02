@@ -2,6 +2,19 @@ import initializer from '../src/Initializer';
 const { JSDOM } = require('jsdom');
 
 describe('initializer', () => {
+
+  jest.useFakeTimers();
+    let mockFunc;
+
+    beforeEach(() => {
+        mockFunc = jest.fn();
+    });
+
+    afterEach(() => {
+        jest.clearAllTimers();
+        jest.clearAllMocks();
+    });
+
   describe('setup', () => {
     let target;
   
@@ -59,71 +72,72 @@ describe('initializer', () => {
   });
 
   describe('idle', () => {
-    beforeAll(() => {
-      jest.useFakeTimers();
+
+    it(' should call function after specified delay', () => {
+      const delay = 2000;
+      const idleHandler = initializer.idle(mockFunc, delay);
+      const timer = Object.getOwnPropertySymbols(initializer)[0];
+      
+      idleHandler('arg1', 'arg2');
+      expect(initializer[timer]).not.toBeNull();
+      jest.advanceTimersByTime(delay - 1);
+      expect(mockFunc).not.toHaveBeenCalled();
+      jest.advanceTimersByTime(1);
+      expect(mockFunc).toHaveBeenCalledWith('arg1', 'arg2');
+      expect(initializer[timer]).toBeNull();
     });
 
-    it('should call the provided function after a delay', () => {
-      const mockFunc = jest.fn();
-      const handler = initializer.idle(mockFunc);
-  
-      handler('arg1', 'arg2');
-      jest.runAllTimers();
-  
-      expect(mockFunc).toHaveBeenCalledWith('arg1', 'arg2');
-      expect(mockFunc).toHaveBeenCalledTimes(1);
-    });
-  
-    it('should call the provided function after the specified delay', () => {
-      const mockFunc = jest.fn();
-      const handler = initializer.idle(mockFunc, 2000);
-  
-      handler('arg1', 'arg2');
-      jest.advanceTimersByTime(1000);
+    it('should reset timer if called again before delay', () => {
+      const delay = 2000;
+      const idleHandler = initializer.idle(mockFunc, delay);
+      const timer = Object.getOwnPropertySymbols(initializer)[0];
+
+      idleHandler('arg1');
+      jest.advanceTimersByTime(delay - 1000);
+      idleHandler('arg2');
+      jest.advanceTimersByTime(delay - 1);
       expect(mockFunc).not.toHaveBeenCalled();
-      jest.advanceTimersByTime(1000);
-      expect(mockFunc).toHaveBeenCalledWith('arg1', 'arg2');
-      expect(mockFunc).toHaveBeenCalledTimes(1);
+      jest.advanceTimersByTime(1);
+      expect(mockFunc).toHaveBeenCalledWith('arg2');
+      expect(initializer[timer]).toBeNull();
     });
-  
-    it('should reset the timer if called again before delay', () => {
-      const mockFunc = jest.fn();
-      const handler = initializer.idle(mockFunc);
-  
-      handler('arg1', 'arg2');
-      jest.advanceTimersByTime(500); // Advance time but not enough to trigger the timeout
-      handler('arg3', 'arg4');
-      jest.runAllTimers();
-  
-      // The first call should be debounced, so only the second call should be executed
-      expect(mockFunc).toHaveBeenCalledWith('arg3', 'arg4');
-      expect(mockFunc).toHaveBeenCalledTimes(1);
+
+    it('should throw error if func is not a function', () => {
+      expect(() => initializer.idle(null)).toThrow(TypeError);
+      expect(() => initializer.idle(null)).toThrow('idle failed: expected a function');
     });
-  
-    it('should handle multiple quick successive calls', () => {
-      const mockFunc = jest.fn();
-      const handler = initializer.idle(mockFunc);
-  
-      handler('arg1', 'arg2');
-      handler('arg3', 'arg4');
-      handler('arg5', 'arg6');
-  
-      jest.runAllTimers();
-  
-      // Only the last call should be executed
-      expect(mockFunc).toHaveBeenCalledWith('arg5', 'arg6');
-      expect(mockFunc).toHaveBeenCalledTimes(1);
+
+    it('should throw error if delay is not a non-negative number', () => {
+      expect(() => initializer.idle(() => {}, -1)).toThrow(TypeError);
+      expect(() => initializer.idle(() => {}, -1)).toThrow('idle failed: expected a non-negative number for delay');
     });
-  
-    it('should clear the timer after function execution', () => {
-      const mockFunc = jest.fn();
-      const handler = initializer.idle(mockFunc);
-  
-      handler('arg1', 'arg2');
-      jest.runAllTimers();
-  
-      // Check if the timer is cleared
-      expect(initializer.timer).toBeNull();
+    
+  });
+
+  describe('blur', () => {
+    it('should call function immediately and clear timer', () => {
+      const delay = 2000;
+      const idleHandler = initializer.idle(mockFunc, delay);
+      const blurHandler = initializer.blur(mockFunc);
+      const timer = Object.getOwnPropertySymbols(initializer)[0];
+
+      idleHandler('arg1');
+      expect(initializer[timer]).not.toBeNull();
+      blurHandler('arg2');
+      expect(mockFunc).toHaveBeenCalledWith('arg2');
+      expect(initializer[timer]).toBeNull();
+    });
+
+    it('should not call function if there is no timer', () => {
+      const blurHandler = initializer.blur(mockFunc);
+
+      blurHandler('arg1');
+      expect(mockFunc).not.toHaveBeenCalled();
+    });
+
+    it('should throw error if func is not a function', () => {
+      expect(() => initializer.blur(null)).toThrow(TypeError);
+      expect(() => initializer.blur(null)).toThrow('Expected a function');
     });
   });
 });

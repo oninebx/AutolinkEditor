@@ -11,11 +11,14 @@ window.AutoLinkEditor = (() => {
           initializer.setup(target);
           const handleKeyup = initializer.idle(e => {
             const position = contentConvertor.saveSelection(target);
-            target.innerHTML= contentConvertor.extractTextAndAnchor(target, nodeHandler.handleText);
+            target.innerHTML= contentConvertor.extractTextAndAnchor(target, nodeHandler.handleText, nodeHandler.handleAnchor);
             contentConvertor.restoreSelection(target, position);
-          });
+          }, 10000);
           
           target.onkeyup = handleKeyup;
+          target.onblur = initializer.blur(e => {
+            target.innerHTML= contentConvertor.extractTextAndAnchor(target, nodeHandler.handleText, nodeHandler.handleAnchor);
+          });
         }catch(e){
           console.error(e);
         }
