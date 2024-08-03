@@ -392,10 +392,64 @@ describe('ContentConvertor', () => {
     it('should handle out of range position', () => {
       const target = document.getElementById('content').firstChild; // Text node
       const position = { start: 100, end: 200 };
+      console.warn = jest.fn();
+
+      contentConvertor.restoreSelection(target, position);
+      expect(console.warn).toHaveBeenCalledWith("restore selection failed: could not find the start or end position within the target node.");
+      
+    });
+
+  });
+
+  describe('indexAnchors', () => {
+    let container;
+
+    beforeAll(() => {
+      const {window} = new JSDOM(`<!DOCTYPE html>
+        <body>
+        </body>`);
+      global.window = window;
+      global.document = window.document;
+      global.HTMLElement = window.HTMLElement;
+    });
+
+    beforeEach(() => {
+      // Set up a basic HTML structure for testing
+      container = document.createElement('div');
+      container.id = 'test-container';
+
+      // Create anchor tags
+      const anchor1 = document.createElement('a');
+      anchor1.href = 'https://example.com/page';
+      anchor1.textContent = 'https://example.com/page';
+      container.appendChild(anchor1);
+
+      const anchor2 = document.createElement('a');
+      anchor2.href = 'https://example.com/page/2';
+      anchor2.textContent = 'https://example.com/page/2';
+      anchor2.dataset.id = 'custom-id';
+      container.appendChild(anchor2);
+
+      document.body.appendChild(container);
+    });
+
+    afterEach(() => {
+      document.body.removeChild(container);
+    });
+
+    it('should index anchors correctly', () => {
+      contentConvertor.indexAnchors(container);
+      const anchorStore = contentConvertor[Object.getOwnPropertySymbols(contentConvertor)[0]];
+      expect(anchorStore).toHaveProperty('test-container-anchor-0', 'https://example.com/page');
+      expect(anchorStore).toHaveProperty('custom-id', 'https://example.com/page/2');
   
-      expect(() => {
-        contentConvertor.restoreSelection(target, position);
-      }).toThrow("restore selection failed: could not find the start or end position within the target node.");
+      // Check if data-id was set correctly
+      expect(container.querySelector('a').dataset.id).toBe('test-container-anchor-0');
+    });
+
+    it('should throw TypeError if target is not an HTMLElement', () => {
+      expect(() => contentConvertor.indexAnchors(null)).toThrow(TypeError);
+      expect(() => contentConvertor.indexAnchors({})).toThrow(TypeError);
     });
 
   });

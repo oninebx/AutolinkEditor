@@ -10,15 +10,22 @@ window.AutoLinkEditor = (() => {
         try{
           initializer.setup(target);
           const handleKeyup = initializer.idle(e => {
-            const position = contentConvertor.saveSelection(target);
-            target.innerHTML= contentConvertor.extractTextAndAnchor(target, nodeHandler.handleText, nodeHandler.handleAnchor);
-            contentConvertor.restoreSelection(target, position);
-          }, 10000);
+            if (e.key === 'Enter') {
+              e.preventDefault();
+            }else{
+              const position = contentConvertor.saveSelection(target);
+              target.innerHTML= contentConvertor.extractTextAndAnchor(target, nodeHandler.handleText, nodeHandler.handleAnchor);
+              contentConvertor.restoreSelection(target, position);
+            }
+          }, 1000);
           
           target.onkeyup = handleKeyup;
           target.onblur = initializer.blur(e => {
             target.innerHTML= contentConvertor.extractTextAndAnchor(target, nodeHandler.handleText, nodeHandler.handleAnchor);
           });
+          target.onfocus = e => {
+            contentConvertor.indexAnchors(target);
+          }
         }catch(e){
           console.error(e);
         }
