@@ -14,22 +14,28 @@ const nodeHandler = (() => {
   };
   return {
     handleText: text => {
+      let result = '';
       if (typeof text !== 'string') {
         throw new Error("handleText failed: input is not a string");
       }
-      let textContent = text;
-      let match;
-      let result = '';
-      while ((match = URLInTextRegex.exec(textContent)) !== null) {
-        const url = match[0];
-        const beforeUrl = textContent.slice(0, match.index);
-        const afterUrl = textContent.slice(match.index + url.length);
+      // text is a url
+      if(URLRegex.test(text)){
+        result += `<a href="${escapeHtml(text)}">${escapeHtml(text)}</a>`;
+      }else {
+        // text contains url
+        let textContent = text;
+        let match;
+        while ((match = URLInTextRegex.exec(textContent)) !== null) {
+          const url = match[0];
+          const beforeUrl = textContent.slice(0, match.index);
+          const afterUrl = textContent.slice(match.index + url.length);
 
-        result += escapeHtml(beforeUrl);
-        result += `<a href="${escapeHtml(url)}">${escapeHtml(url)}</a>`;
-        textContent = afterUrl;
+          result += escapeHtml(beforeUrl);
+          result += `<a href="${escapeHtml(url)}">${escapeHtml(url)}</a>`;
+          textContent = afterUrl;
+        }
+        result += escapeHtml(textContent); // Append any remaining text
       }
-      result += escapeHtml(textContent); // Append any remaining text
       return result;
     },
     handleAnchor: anchor => {
@@ -156,15 +162,22 @@ const nodeHandler = (() => {
       let result = node.nodeType === 3 ? node.data : '';
       node.childNodes.forEach(child => {
         if (child.nodeType === 3) { // text
-          result += handleText(child.textContent);
+          console.log(handleText);
+          const textWithAnchors = handleText(child.textContent);
+          result += textWithAnchors;
+
+          const container = document.createElement('div');
+          container.innerHTML = textWithAnchors;
+          
+          this.indexAnchors(container);
+          
         } else if (child.nodeType === 1) { 
           if(child.tagName === 'A') { // anchar element
             // TODO: check the url is illegal
             // result += child.outerHTML;
-            console.log(this[ANCHOR_STORE][child.dataset.id]);
             result += handleAnchor(child);
           }else { // other elements
-            result += this.extractTextAndAnchor(child);
+            result += this.extractTextAndAnchor(child, handleText, handleAnchor);
           }
         } 
       });
@@ -172,28 +185,28 @@ const nodeHandler = (() => {
       return result;
     },
     indexAnchors(target) {
-      this[ANCHOR_STORE] = {};
       if(target && target instanceof HTMLElement) {
         const anchorTags = target.querySelectorAll('a');
+        // console.log(anchorTags);
         if(anchorTags) {
           const idPrefix = target.id ?? target.dataset.id;
           anchorTags.forEach((anchor, index) => {
             const anchorId = anchor.dataset.id ?? `${idPrefix}-anchor-${index}`;
-            console.log(anchor.href);
-            console.log(anchor.textContent);
-            if(anchor.href.replace(/\/+$/, '') === anchor.textContent) {
+            if(anchor.href.replace(/\/+$/, '').toLowerCase() === anchor.textContent.toLowerCase()) {
+              // console.log(anchor.href);
               if(!anchor.dataset.id){
                 anchor.setAttribute('data-id', anchorId);
               }
               this[ANCHOR_STORE][anchorId] = anchor.href;
             }
-            console.log(this[ANCHOR_STORE]);
           });
         }
       }else {
         throw TypeError("index anchors failed: the node is undefined, null or not a node");
       }
-      
+    },
+    clearIndexes() {
+      this[ANCHOR_STORE] = {};
     }
    };
  })();

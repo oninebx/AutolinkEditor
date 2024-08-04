@@ -171,8 +171,9 @@ describe('ContentConvertor', () => {
 
     beforeAll(() => {
       // Mock the DOM environment using JSDOM
-      const { document } = new JSDOM('<!doctype html><html><body></body></html>').window;
-      global.document = document;
+      const { window } = new JSDOM('<!doctype html><html><body></body></html>');
+      global.document = window.document;
+      global.HTMLElement = window.HTMLElement;
     });
     const mockHandleText = text => text.toUpperCase();
 
@@ -403,6 +404,8 @@ describe('ContentConvertor', () => {
 
   describe('indexAnchors', () => {
     let container;
+    let anchorSame1, anchorSame2, anchorSame3;
+    let anchorDiff1, anchorDiff2;
 
     beforeAll(() => {
       const {window} = new JSDOM(`<!DOCTYPE html>
@@ -419,32 +422,87 @@ describe('ContentConvertor', () => {
       container.id = 'test-container';
 
       // Create anchor tags
-      const anchor1 = document.createElement('a');
-      anchor1.href = 'https://example.com/page';
-      anchor1.textContent = 'https://example.com/page';
-      container.appendChild(anchor1);
+      anchorSame1 = document.createElement('a');
+      anchorSame1.href = 'https://example.com/page';
+      anchorSame1.textContent = 'https://example.com/page';
 
-      const anchor2 = document.createElement('a');
-      anchor2.href = 'https://example.com/page/2';
-      anchor2.textContent = 'https://example.com/page/2';
-      anchor2.dataset.id = 'custom-id';
-      container.appendChild(anchor2);
+      anchorSame2 = document.createElement('a');
+      anchorSame2.href = 'https://example.com/page/2';
+      anchorSame2.textContent = 'https://example.com/page/2';
+      anchorSame2.dataset.id = 'custom-id';
+
+      anchorSame3 = document.createElement('a');
+      anchorSame3.href = 'url3';
+      anchorSame3.textContent = 'URL3';
+      anchorSame3.dataset.id = 'custom-id-3';
+
+      anchorDiff1 = document.createElement('a');
+      anchorDiff1.href = 'https://example.com/page/3';
+      anchorDiff1.textContent = 'page3';
+      anchorDiff1.dataset.id = 'custom-id';
+
+      anchorDiff2 = document.createElement('a');
+      anchorDiff2.href = 'https://example.com/page/4';
+      anchorDiff2.textContent = 'page4';
+      anchorDiff2.dataset.id = 'custom-id';
 
       document.body.appendChild(container);
     });
 
     afterEach(() => {
+      container.innerHTML = '';
       document.body.removeChild(container);
     });
 
-    it('should index anchors correctly', () => {
+    it('should use the data-id to index anchor with data-id, whose href is same as text', () => {
+      // Arrange
+      container.appendChild(anchorSame2);
+
+      // Action
       contentConvertor.indexAnchors(container);
       const anchorStore = contentConvertor[Object.getOwnPropertySymbols(contentConvertor)[0]];
-      expect(anchorStore).toHaveProperty('test-container-anchor-0', 'https://example.com/page');
-      expect(anchorStore).toHaveProperty('custom-id', 'https://example.com/page/2');
-  
-      // Check if data-id was set correctly
-      expect(container.querySelector('a').dataset.id).toBe('test-container-anchor-0');
+
+      // Assert
+      expect(anchorStore).toHaveProperty(anchorSame2.dataset.id, anchorSame2.href);
+ 
+    });
+
+    it('should use the generated id to index anchor without data-id, whose href is same as text ', () => {
+      // Arrange
+      container.appendChild(anchorSame1);
+
+      // Action
+      contentConvertor.indexAnchors(container);
+      const anchorStore = contentConvertor[Object.getOwnPropertySymbols(contentConvertor)[0]];
+
+      // Assert
+      expect(anchorStore).toHaveProperty(anchorSame1.dataset.id, anchorSame1.href);
+    });
+
+    it('should index anchor whose href is same as text, case-insensitive', () => {
+      // Arrange
+      container.appendChild(anchorSame3);
+
+      // Action
+      contentConvertor.indexAnchors(container);
+      const anchorStore = contentConvertor[Object.getOwnPropertySymbols(contentConvertor)[0]];
+
+      // Assert
+      expect(anchorStore).toHaveProperty(anchorSame3.dataset.id, anchorSame3.href.toLowerCase());
+    });
+
+    it('should not index anchor whose href is different from text', () => {
+      // Arrange
+      container.appendChild(anchorDiff1);
+      container.appendChild(anchorDiff2);
+
+      // Action
+      contentConvertor.indexAnchors(container);
+      const anchorStore = contentConvertor[Object.getOwnPropertySymbols(contentConvertor)[0]];
+
+      // Assert
+      expect(anchorStore).not.toHaveProperty(anchorDiff1.dataset.id, anchorDiff1.href.toLowerCase());
+      expect(anchorStore).not.toHaveProperty(anchorDiff2.dataset.id, anchorDiff2.href.toLowerCase());
     });
 
     it('should throw TypeError if target is not an HTMLElement', () => {
