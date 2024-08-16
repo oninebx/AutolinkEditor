@@ -1,17 +1,18 @@
 const URLRegex = /^(https?:\/\/(([a-zA-Z0-9]+-?)+[a-zA-Z0-9]+\.)+(([a-zA-Z0-9]+-?)+[a-zA-Z0-9]+))(:\d+)?(\/.*)?(\?.*)?(#.*)?$/;
 const URLInTextRegex = /(https?:\/\/(([a-zA-Z0-9]+-?)+[a-zA-Z0-9]+\.)+(([a-zA-Z0-9]+-?)+[a-zA-Z0-9]+))(:\d+)?(\/.*)?(\?.*)?(#.*)?/;
+const escapeHtml = (text) => {
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  };
+  return text.replace(/[&<>"']/g, m => map[m] );
+};
 
 const nodeHandler = (() => {
-  const escapeHtml = (text) => {
-    const map = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;'
-    };
-    return text.replace(/[&<>"']/g, m => map[m] );
-  };
+  
   return {
     handleText: text => {
       let result = '';
@@ -40,39 +41,36 @@ const nodeHandler = (() => {
     },
     handleAnchor: anchor => {
       if(anchor && anchor instanceof HTMLAnchorElement){
-        // console.log(anchor);
+        const text = anchor.textContent;
+        if(URLRegex.test(text)){
+          // anchor.href = text;
+          return makePlainAnchor(anchor);
+        }else {
+          return anchor.textContent;
+        }
+      }else{
+        throw TypeError("handle anchor error: the target is undefined, null or not a anchor");
       }
-      
-      return anchor.outerHTML;
-      // if(anchor) {
-      //   const text = anchor.textContent;
-      //   if(URLRegex.test(text)){
-      //     return anchor.outerHTML;
-      //   }else {
-      //     return anchor.innerHtml;
-      //   }
-      // }
-      // return "";
     },
-    createLink: url => {
-      if(typeof url !== "string" || url.trim() === ""){
-        throw Error("create hyperlink failed: the url is undefined, null, empty or not a string");
+    makePlainAnchor: target => {
+      if(target && target instanceof HTMLAnchorElement){
+        
+        if(target.href && target.href.trim() && target.textContent && target.textContent.trim()) {
+          return `<a href="${target.href}">${target.textContent}</a>`;
+        }else{
+          console.warn(`skip ${target}, this anchor do not have content`);
+          return "";
+        }
       }
-      if(!URLRegex.test(url)) {
-        throw Error("create hyperlink failed: the url is invalid");
+      else{
+        throw TypeError("make plain anchor error: the target is undefined, null or not a anchor");
       }
-      let link = document.createElement("a");
-      link.href = url;
-      link.text = url;
-      return link;
-    },
+    }
   
 };})();
 
  const contentConvertor= (() => {
-  const ANCHOR_STORE = Symbol("anchors");
   return {
-    [ANCHOR_STORE]: {},
     saveSelection: target => {
       if(target) {
         if(window.getSelection) {
@@ -146,7 +144,21 @@ const nodeHandler = (() => {
       }
   
     },
-    extractTextAndAnchor(node, handleText = text => text, handleAnchor = anchor => anchor.outerHTML) {
+    extractTextAndAnchor(node, inclusion, nodeHandler) {
+      const {handleText, handleAnchor, makePlainAnchor} = nodeHandler;
+
+      if(handleText && typeof handleText !== "function") {
+        throw Error("extract text and anchors failed: handleText function is missing");
+      }
+
+      if(handleAnchor && typeof handleAnchor !== "function") {
+        throw Error("extract text and anchors failed: handleText function is missing");
+      }
+
+      if(makePlainAnchor && typeof makePlainAnchor !== "function") {
+        throw Error("extract text and anchors failed: handleText function is missing");
+      }
+
       if(!node || !node.nodeType) {
         throw Error("extract text and anchors failed: the node is undefined, null or not a node");
       }
@@ -155,29 +167,22 @@ const nodeHandler = (() => {
         throw Error("extract text and anchors failed: the node is not text or element");
       }
   
-      if(handleText && typeof handleText !== "function") {
-        throw Error("extract text and anchors failed: handleText function is missing");
-      }
+      
   
       let result = node.nodeType === 3 ? node.data : '';
       node.childNodes.forEach(child => {
         if (child.nodeType === 3) { // text
-          console.log(handleText);
-          const textWithAnchors = handleText(child.textContent);
-          result += textWithAnchors;
-
-          const container = document.createElement('div');
-          container.innerHTML = textWithAnchors;
-          
-          this.indexAnchors(container);
-          
+          result += handleText(child.textContent);
         } else if (child.nodeType === 1) { 
           if(child.tagName === 'A') { // anchar element
-            // TODO: check the url is illegal
-            // result += child.outerHTML;
-            result += handleAnchor(child);
+            const key = child.id === "" ? child.dataset.id : child.id;
+            if(inclusion && inclusion[key]){
+              result += handleAnchor(child);
+            }else {
+              result += makePlainAnchor(child);
+            }
           }else { // other elements
-            result += this.extractTextAndAnchor(child, handleText, handleAnchor);
+            result += this.extractTextAndAnchor(child, inclusion, nodeHandler);
           }
         } 
       });
@@ -185,28 +190,26 @@ const nodeHandler = (() => {
       return result;
     },
     indexAnchors(target) {
+      const inclusion = {};
       if(target && target instanceof HTMLElement) {
         const anchorTags = target.querySelectorAll('a');
-        // console.log(anchorTags);
         if(anchorTags) {
-          const idPrefix = target.id ?? target.dataset.id;
+          const idPrefix = target.id === "" ? target.dataset.id : target.id;
+          
           anchorTags.forEach((anchor, index) => {
             const anchorId = anchor.dataset.id ?? `${idPrefix}-anchor-${index}`;
             if(anchor.href.replace(/\/+$/, '').toLowerCase() === anchor.textContent.toLowerCase()) {
-              // console.log(anchor.href);
               if(!anchor.dataset.id){
                 anchor.setAttribute('data-id', anchorId);
               }
-              this[ANCHOR_STORE][anchorId] = anchor.href;
+              inclusion[[anchorId]] = anchor.href;
             }
           });
         }
+        return Object.keys(inclusion).length === 0 ? null : inclusion;
       }else {
         throw TypeError("index anchors failed: the node is undefined, null or not a node");
       }
-    },
-    clearIndexes() {
-      this[ANCHOR_STORE] = {};
     }
    };
  })();

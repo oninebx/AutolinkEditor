@@ -1,124 +1,7 @@
-// Import the HyperlinkGenerator module
-// const hyperlinkGenerator = require('./HyperlinkGenerator');
 import {nodeHandler, contentConvertor} from '../src/HyperlinkGenerator';
 const { JSDOM } = require('jsdom');
 
 describe('NodeHandler', () => {
-  describe('createLink', () => {
-    beforeAll(() => {
-      // Mock the DOM environment using JSDOM
-      const { document } = new JSDOM('<!doctype html><html><body></body></html>').window;
-      global.document = document;
-    });
-
-    it('should create a hyperlink with a valid URL', () => {
-      const url = "https://example.com";
-      const link = nodeHandler.createLink(url);
-      expect(link.tagName).toBe("A");
-      expect(link.href).toBe(new URL(url).toString());
-      expect(link.textContent).toBe(url);
-    });
-
-    it('should create a hyperlink with a valid URL containing query parameters', () => {
-      const url = "https://example.com?query=param";
-      const link = nodeHandler.createLink(url);
-      expect(link.tagName).toBe("A");
-      expect(link.href).toBe(new URL(url).toString());
-      expect(link.textContent).toBe(url);
-    });
-
-    it('should create a hyperlink with a valid URL containing fragments', () => {
-      const url = "https://example.com#section";
-      const link = nodeHandler.createLink(url);
-      expect(link.tagName).toBe("A");
-      expect(link.href).toBe(new URL(url).toString());
-      expect(link.textContent).toBe(url);
-    });
-
-    it('should create a hyperlink with a valid URL containing subdomains', () => {
-      const url = "https://sub.example.com";
-      const link = nodeHandler.createLink(url);
-      expect(link.tagName).toBe("A");
-      expect(link.href).toBe(new URL(url).toString());
-      expect(link.textContent).toBe(url);
-    });
-
-    it('should create a hyperlink with a valid URL containing paths', () => {
-      const url = "https://example.com/path/to/resource";
-      const link = nodeHandler.createLink(url);
-      expect(link.tagName).toBe("A");
-      expect(link.href).toBe(new URL(url).toString());
-      expect(link.textContent).toBe(url);
-    });
-
-    it('should throw an error if the URL is undefined', () => {
-      expect(() => {
-        nodeHandler.createLink(undefined);
-      }).toThrow("create hyperlink failed: the url is undefined, null, empty or not a string");
-    });
-
-    it('should throw an error if the URL is null', () => {
-      expect(() => {
-        nodeHandler.createLink(null);
-      }).toThrow("create hyperlink failed: the url is undefined, null, empty or not a string");
-    });
-
-    it('should throw an error if the URL is an empty string', () => {
-      expect(() => {
-        nodeHandler.createLink("");
-      }).toThrow("create hyperlink failed: the url is undefined, null, empty or not a string");
-    });
-
-    it('should throw an error if the URL is a string with only spaces', () => {
-      expect(() => {
-        nodeHandler.createLink("   ");
-      }).toThrow("create hyperlink failed: the url is undefined, null, empty or not a string");
-    });
-
-    
-    const invalidObjs = [
-      undefined,
-      null,
-      "",
-      "   ",
-      12345,
-      {},
-      [],
-      true
-    ];
-
-    invalidObjs.forEach(url => {
-      it(`should throw an error for invalid URL: ${JSON.stringify(url)}`, () => {
-        expect(() => {
-          nodeHandler.createLink(url);
-        }).toThrow("create hyperlink failed: the url is undefined, null, empty or not a string");
-      });
-    });
-
-    const invalidUrls = [
-      "www.example.com",
-      "example.com",
-      "http://",
-      "http://example",
-      "http:///example.com",
-      "ftp://example.com",
-      "https:/example.com",
-      "http:// example .com",
-      "http://example.com:port",
-      "http://.com",
-      "http://-example.com",
-      "http://example..com"
-    ]
-    
-    invalidUrls.forEach(url => {
-      it(`should throw an error for invalid URL: ${JSON.stringify(url)}`, () => {
-        expect(() => {
-          nodeHandler.createLink(url);
-        }).toThrow("create hyperlink failed: the url is invalid");
-      });
-    });
-
-  });
 
   describe('HandleText', () => {
     it('should convert URLs in text to anchor tags', () => {
@@ -163,7 +46,37 @@ describe('NodeHandler', () => {
       const expected = 'First URL: <a href="http://example.com">http://example.com</a>. Second URL: <a href="https://example.org">https://example.org</a>.';
       expect(nodeHandler.handleText(input)).toBe(expected);
     });
-  })
+  });
+
+  describe('HandleAnchor', () => {
+    beforeAll(() => {
+      const { window } = new JSDOM('<!doctype html><html><body></body></html>');
+      global.document = window.document;
+      global.HTMLAnchorElement = window.HTMLAnchorElement;
+    });
+
+    it('should return outerHTML and set href if anchor text is a valid URL', () => {
+      const anchor = document.createElement('a');
+      const validURL = 'https://www.example.com';
+      anchor.textContent = validURL;
+      const result = nodeHandler.handleAnchor(anchor);
+      expect(anchor.href.replace(/\/+$/, '')).toBe(validURL); // Check if href is set correctly
+      expect(result).toBe(anchor.outerHTML); // Check if outerHTML is returned
+    });
+
+    it('should return innerHTML if anchor text is not a valid URL', () => {
+      const anchor = document.createElement('a');
+      anchor.textContent = 'Not a URL';
+      anchor.innerHTML = '<span>Not a URL</span>';
+      expect(nodeHandler.handleAnchor(anchor)).toBe(anchor.innerHTML);
+    });
+
+    it('should throw TypeError if the argument is not an anchor element', () => {
+      expect(() => nodeHandler.handleAnchor(null)).toThrow(TypeError);
+      expect(() => nodeHandler.handleAnchor({})).toThrow(TypeError);
+      expect(() => nodeHandler.handleAnchor(document.createElement('div'))).toThrow(TypeError);
+    });
+  });
 });
 
 describe('ContentConvertor', () => {
@@ -191,8 +104,10 @@ describe('ContentConvertor', () => {
     });
   
     it('should throw error if handleText is not a function', () => {
+      // Arrange
       const div = document.createElement('div');
-      expect(() => contentConvertor.extractTextAndAnchor(div, "not a function")).toThrow("extract text and anchors failed: handleText function is missing");
+      const exclusion = {};
+      expect(() => contentConvertor.extractTextAndAnchor(div, exclusion, "not a function")).toThrow("extract text and anchors failed: handleText function is missing");
     });
 
     it('should extract text from a text node', () => {
@@ -212,21 +127,57 @@ describe('ContentConvertor', () => {
       expect(contentConvertor.extractTextAndAnchor(div)).toBe('Text before <a href="https://example.com">Example</a> text after');
     });
 
-    test('should handle text transformation with handleText function', () => {
+    it('should handle text transformation with handleText function', () => {
+      // Arrange
       const div = document.createElement('div');
       div.innerHTML = 'Text before <a href="https://example.com">Example</a> text after';
-      expect(contentConvertor.extractTextAndAnchor(div, mockHandleText)).toBe('TEXT BEFORE <a href="https://example.com">Example</a> TEXT AFTER');
+      const exclusion = {};
+
+      // Act
+      const result = contentConvertor.extractTextAndAnchor(div, exclusion, mockHandleText);
+
+      // Assert
+      expect(result).toBe('TEXT BEFORE <a href="https://example.com">Example</a> TEXT AFTER');
     });
   
     it('should throw an error if the node is not a valid node', () => {
       expect(() => contentConvertor.extractTextAndAnchor({})).toThrow("extract text and anchors failed: the node is undefined, null or not a node");
     });
   
-    test('should handle deeply nested structures', () => {
+    it('should handle deeply nested structures', () => {
+      // Arrange
       const div = document.createElement('div');
       div.innerHTML = '<div>Level 1<div>Level 2<a href="https://example.com">Example</a>Level 2 end</div>Level 1 end</div>';
-      expect(contentConvertor.extractTextAndAnchor(div)).toBe('Level 1Level 2<a href="https://example.com">Example</a>Level 2 endLevel 1 end');
+      
+      // Act
+      const result = contentConvertor.extractTextAndAnchor(div);
+      
+      // Assert
+      expect(result).toBe('Level 1Level 2<a href="https://example.com">Example</a>Level 2 endLevel 1 end');
     });
+
+    it('should handle anchors in inclusion', () => {
+      // Arrange
+      const div = document.createElement('div');
+      const anchorInclude = document.createElement('a');
+      anchorInclude.id = 'inclusionid';
+      anchorInclude.href = 'include-url';
+      anchorInclude.textContent = 'include';
+      const anchorExclude = document.createElement('a');
+      anchorExclude.id = 'exlusionid';
+      anchorExclude.href = 'exclude-url';
+      anchorExclude.textContent = 'exclude';
+      div.append(anchorInclude, anchorExclude);
+      const exclusion = {
+        [anchorInclude.id]: anchorInclude.href 
+      };
+
+      // Act
+      const result = contentConvertor.extractTextAndAnchor(div, exclusion, text => text, anchor => "handled");
+
+      // Assert
+      expect(result).toBe('handled<a id=\"exlusionid\" href=\"exclude-url\">exclude</a>');
+    })
   });
   
   describe('saveSelection', () => {
@@ -459,8 +410,7 @@ describe('ContentConvertor', () => {
       container.appendChild(anchorSame2);
 
       // Action
-      contentConvertor.indexAnchors(container);
-      const anchorStore = contentConvertor[Object.getOwnPropertySymbols(contentConvertor)[0]];
+      const anchorStore = contentConvertor.indexAnchors(container);
 
       // Assert
       expect(anchorStore).toHaveProperty(anchorSame2.dataset.id, anchorSame2.href);
@@ -472,8 +422,7 @@ describe('ContentConvertor', () => {
       container.appendChild(anchorSame1);
 
       // Action
-      contentConvertor.indexAnchors(container);
-      const anchorStore = contentConvertor[Object.getOwnPropertySymbols(contentConvertor)[0]];
+      const anchorStore = contentConvertor.indexAnchors(container);
 
       // Assert
       expect(anchorStore).toHaveProperty(anchorSame1.dataset.id, anchorSame1.href);
@@ -482,10 +431,9 @@ describe('ContentConvertor', () => {
     it('should index anchor whose href is same as text, case-insensitive', () => {
       // Arrange
       container.appendChild(anchorSame3);
-
+      
       // Action
-      contentConvertor.indexAnchors(container);
-      const anchorStore = contentConvertor[Object.getOwnPropertySymbols(contentConvertor)[0]];
+      const anchorStore = contentConvertor.indexAnchors(container);
 
       // Assert
       expect(anchorStore).toHaveProperty(anchorSame3.dataset.id, anchorSame3.href.toLowerCase());
@@ -495,14 +443,11 @@ describe('ContentConvertor', () => {
       // Arrange
       container.appendChild(anchorDiff1);
       container.appendChild(anchorDiff2);
-
+      
       // Action
-      contentConvertor.indexAnchors(container);
-      const anchorStore = contentConvertor[Object.getOwnPropertySymbols(contentConvertor)[0]];
-
+      const anchorStore = contentConvertor.indexAnchors(container);
       // Assert
-      expect(anchorStore).not.toHaveProperty(anchorDiff1.dataset.id, anchorDiff1.href.toLowerCase());
-      expect(anchorStore).not.toHaveProperty(anchorDiff2.dataset.id, anchorDiff2.href.toLowerCase());
+      expect(anchorStore).toBeNull();
     });
 
     it('should throw TypeError if target is not an HTMLElement', () => {
