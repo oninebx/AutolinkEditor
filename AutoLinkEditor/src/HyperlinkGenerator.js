@@ -43,8 +43,7 @@ const nodeHandler = (() => {
       if(anchor && anchor instanceof HTMLAnchorElement){
         const text = anchor.textContent;
         if(URLRegex.test(text)){
-          // anchor.href = text;
-          return makePlainAnchor(anchor);
+          return nodeHandler.makePlainAnchor(anchor);
         }else {
           return anchor.textContent;
         }
@@ -145,30 +144,24 @@ const nodeHandler = (() => {
   
     },
     extractTextAndAnchor(node, inclusion, nodeHandler) {
-      const {handleText, handleAnchor, makePlainAnchor} = nodeHandler;
-
-      if(handleText && typeof handleText !== "function") {
-        throw Error("extract text and anchors failed: handleText function is missing");
-      }
-
-      if(handleAnchor && typeof handleAnchor !== "function") {
-        throw Error("extract text and anchors failed: handleText function is missing");
-      }
-
-      if(makePlainAnchor && typeof makePlainAnchor !== "function") {
-        throw Error("extract text and anchors failed: handleText function is missing");
-      }
-
       if(!node || !node.nodeType) {
         throw Error("extract text and anchors failed: the node is undefined, null or not a node");
       }
-  
+
       if(node.nodeType !== 1 && node.nodeType !== 3){
         throw Error("extract text and anchors failed: the node is not text or element");
       }
-  
-      
-  
+
+      if(!nodeHandler) {
+        throw TypeError("extract text and anchors failed: invalid nodeHandler, please check if it is an object with handleText, handleAnchor and makePlainAnchor methods.");
+      }
+
+      const checkNodeHandler = ["handleText", "handleAnchor", "makePlainAnchor"].every(method => typeof nodeHandler[method] === 'function');
+      if(!checkNodeHandler) {
+        throw TypeError("extract text and anchors failed: invalid nodeHandler, please check if it is an object with handleText, handleAnchor and makePlainAnchor methods.");
+      }
+
+      const {handleText, handleAnchor, makePlainAnchor} = nodeHandler;
       let result = node.nodeType === 3 ? node.data : '';
       node.childNodes.forEach(child => {
         if (child.nodeType === 3) { // text

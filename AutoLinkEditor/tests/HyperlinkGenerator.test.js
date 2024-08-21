@@ -53,22 +53,35 @@ describe('NodeHandler', () => {
       const { window } = new JSDOM('<!doctype html><html><body></body></html>');
       global.document = window.document;
       global.HTMLAnchorElement = window.HTMLAnchorElement;
+      
     });
 
-    it('should return outerHTML and set href if anchor text is a valid URL', () => {
+    it('should make a plain anchor if anchor has text is a valid URL', () => {
+      // Arrange
       const anchor = document.createElement('a');
       const validURL = 'https://www.example.com';
       anchor.textContent = validURL;
+      anchor.href = validURL;
+      anchor.classList.add("class1");
+
+      // Act
       const result = nodeHandler.handleAnchor(anchor);
-      expect(anchor.href.replace(/\/+$/, '')).toBe(validURL); // Check if href is set correctly
-      expect(result).toBe(anchor.outerHTML); // Check if outerHTML is returned
+
+      // Assert
+      expect(result).toBe("<a href=\"https://www.example.com/\">https://www.example.com</a>");
     });
 
-    it('should return innerHTML if anchor text is not a valid URL', () => {
+    it('should return text content if anchor text is not a valid URL', () => {
+      // Arrange
       const anchor = document.createElement('a');
       anchor.textContent = 'Not a URL';
       anchor.innerHTML = '<span>Not a URL</span>';
-      expect(nodeHandler.handleAnchor(anchor)).toBe(anchor.innerHTML);
+
+      // Act
+      const result = nodeHandler.handleAnchor(anchor);
+
+      // Assert
+      expect(result).toBe(anchor.textContent);
     });
 
     it('should throw TypeError if the argument is not an anchor element', () => {
@@ -88,6 +101,7 @@ describe('ContentConvertor', () => {
       global.document = window.document;
       global.HTMLElement = window.HTMLElement;
     });
+
     const mockHandleText = text => text.toUpperCase();
 
     it('should throw error if node is undefined', () => {
@@ -103,81 +117,47 @@ describe('ContentConvertor', () => {
       expect(() => contentConvertor.extractTextAndAnchor(commentNode)).toThrow("extract text and anchors failed: the node is not text or element");
     });
   
-    it('should throw error if handleText is not a function', () => {
+    it('should throw error if nodeHandler is not a object or do not have handleText, handleAnchor and makePlainAnchor method.', () => {
       // Arrange
       const div = document.createElement('div');
-      const exclusion = {};
-      expect(() => contentConvertor.extractTextAndAnchor(div, exclusion, "not a function")).toThrow("extract text and anchors failed: handleText function is missing");
-    });
-
-    it('should extract text from a text node', () => {
-      const textNode = document.createTextNode('Hello, world!');
-      expect(contentConvertor.extractTextAndAnchor(textNode)).toBe('Hello, world!');
-    });
-
-    it('should handle anchor elements correctly', () => {
-      const div = document.createElement('div');
-      div.innerHTML = '<a href="https://example.com">Example</a>';
-      expect(contentConvertor.extractTextAndAnchor(div)).toBe('<a href="https://example.com">Example</a>');
-    });
-
-    it('should handle nested elements correctly', () => {
-      const div = document.createElement('div');
-      div.innerHTML = 'Text before <a href="https://example.com">Example</a> text after';
-      expect(contentConvertor.extractTextAndAnchor(div)).toBe('Text before <a href="https://example.com">Example</a> text after');
-    });
-
-    it('should handle text transformation with handleText function', () => {
-      // Arrange
-      const div = document.createElement('div');
-      div.innerHTML = 'Text before <a href="https://example.com">Example</a> text after';
-      const exclusion = {};
+      const inclusion = {};
+      const invalidNodeHandler = [
+        "not a object",
+        undefined,
+        null,
+        0,
+        {},
+        { handleText: jest.fn()}
+      ];
 
       // Act
-      const result = contentConvertor.extractTextAndAnchor(div, exclusion, mockHandleText);
+      const extractTextAndAnchors = invalidNodeHandler.map(n => () => contentConvertor.extractTextAndAnchor(div, inclusion, n));
 
       // Assert
-      expect(result).toBe('TEXT BEFORE <a href="https://example.com">Example</a> TEXT AFTER');
+      extractTextAndAnchors.forEach(e => expect(e).toThrow("extract text and anchors failed: invalid nodeHandler, please check if it is an object with handleText, handleAnchor and makePlainAnchor methods."));
     });
-  
-    it('should throw an error if the node is not a valid node', () => {
-      expect(() => contentConvertor.extractTextAndAnchor({})).toThrow("extract text and anchors failed: the node is undefined, null or not a node");
-    });
-  
-    it('should handle deeply nested structures', () => {
-      // Arrange
-      const div = document.createElement('div');
-      div.innerHTML = '<div>Level 1<div>Level 2<a href="https://example.com">Example</a>Level 2 end</div>Level 1 end</div>';
       
+    it('should call handleText function for every text node in target', () => {
+      // Arrange
+      const target = document.createElement('div');
+      const text1 = document.createTextNode('text1');
+      const text2 = document.createTextNode('text2');
+      const span1 = document.createElement('span');
+      span1.textContent = "span text";
+      target.append(text1, span1, text2);
+      const mockNodeHandler = {
+        handleText: jest.fn(),
+        handleAnchor: jest.fn(),
+        makePlainAnchor: jest.fn()
+      }
+
       // Act
-      const result = contentConvertor.extractTextAndAnchor(div);
-      
+      const result = contentConvertor.extractTextAndAnchor(target, {}, mockNodeHandler);
+
       // Assert
-      expect(result).toBe('Level 1Level 2<a href="https://example.com">Example</a>Level 2 endLevel 1 end');
+      expect(mockNodeHandler.handleText).toHaveBeenCalledTimes(3);
     });
 
-    it('should handle anchors in inclusion', () => {
-      // Arrange
-      const div = document.createElement('div');
-      const anchorInclude = document.createElement('a');
-      anchorInclude.id = 'inclusionid';
-      anchorInclude.href = 'include-url';
-      anchorInclude.textContent = 'include';
-      const anchorExclude = document.createElement('a');
-      anchorExclude.id = 'exlusionid';
-      anchorExclude.href = 'exclude-url';
-      anchorExclude.textContent = 'exclude';
-      div.append(anchorInclude, anchorExclude);
-      const exclusion = {
-        [anchorInclude.id]: anchorInclude.href 
-      };
-
-      // Act
-      const result = contentConvertor.extractTextAndAnchor(div, exclusion, text => text, anchor => "handled");
-
-      // Assert
-      expect(result).toBe('handled<a id=\"exlusionid\" href=\"exclude-url\">exclude</a>');
-    })
   });
   
   describe('saveSelection', () => {

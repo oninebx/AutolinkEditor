@@ -1,3 +1,30 @@
+# AutoLink Editor
+![Javascript](https://img.shields.io/badge/JavaScript-passing-forestgreen)
+![License](https://img.shields.io/badge/license-MIT-green)
+
+## Table of Contents
+* [Introduction](#introduction)
+* [Features](*features)
+
+## <a name="introduction">Introduction</a>
+
+## <a name="features">Features</a>
+### Terminologies
+* **Plain anchor** only includes the href attribute and the text.
+* **Diff-Anchor** stands for the anchor whose href is different from its text.
+* **Same-Anchor** stands for the anchor whose href is same to its text.
+
+### Behaviours
+* When processing pasted rich text, only the anchors and text are retained, the anchors, and valid URLs within the text will be converted into plain anchors.
+* It can process the input text and dynamically convert valid URLs within the text into plain anchors.
+
+* When deleting text within an anchor
+	* If it is a diff-anchor, it will not take any action until all the text within the anchor is deleted, at which point the anchor itself will be removed.
+	* For a same-anchor, if the remaining anchor text is still a valid URL after deletion, the href will be updated to match the text. Otherwise, the anchor will be converted into plain text.
+
+* When converting between text and anchors, it must maintain the cursor position.
+
+
 # Reference
 https://stackoverflow.com/questions/24162684/how-to-auto-convert-an-url-into-a-hyperlink-when-it-is-pasted?noredirect=1&lq=1
 

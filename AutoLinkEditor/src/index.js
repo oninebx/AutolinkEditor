@@ -23,7 +23,7 @@ window.AutoLinkEditor = (() => {
             }else if(!pasting){
               console.log('create anchors in keyup');
               const position = contentConvertor.saveSelection(target);
-              target.innerHTML= contentConvertor.extractTextAndAnchor(target, inclusion, nodeHandler.handleText, nodeHandler.handleAnchor);
+              target.innerHTML= contentConvertor.extractTextAndAnchor(target, inclusion, nodeHandler);
               contentConvertor.restoreSelection(target, position);
             }else {
               pasting = false;
@@ -32,7 +32,7 @@ window.AutoLinkEditor = (() => {
           
           target.onkeyup = handleKeyup;
           target.onblur = initializer.blur(e => {
-            target.innerHTML= contentConvertor.extractTextAndAnchor(target, inclusion, nodeHandler.handleText, nodeHandler.handleAnchor);
+            target.innerHTML= contentConvertor.extractTextAndAnchor(target, inclusion, nodeHandler);
           });
           target.onfocus = e => {
             contentConvertor.indexAnchors(target);
