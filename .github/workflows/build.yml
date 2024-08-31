@@ -1,0 +1,40 @@
+name: Build InspirationFront
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node: [16, 18]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node }} 
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Build AutoLinkEditor
+        run: npm run build:autolink-editor
+        working-directory: ./AutoLinkEditor
+      
+      - name: Run Tests
+        run: npm test
+      
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: built-libraries
+          path: |
+            ./packages/AutoLinkEditor/dist
