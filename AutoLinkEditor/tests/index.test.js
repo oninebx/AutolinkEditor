@@ -2,7 +2,7 @@ import { JSDOM } from 'jsdom';
 import { fireEvent } from '@testing-library/dom';
 
 // Mock the dependencies
-jest.mock('../src/initializer', () => ({
+jest.mock('../src/Initializer', () => ({
       setup: jest.fn(),
       idle: jest.fn((fn, delay) => fn),
       blur: jest.fn(fn => fn),

@@ -37,4 +37,4 @@ jobs:
         with:
           name: built-libraries
           path: |
-            ./packages/AutoLinkEditor/dist
+            ./dist/autolink-editor
