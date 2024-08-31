@@ -2,7 +2,7 @@
   "scripts": {
     "test": "jest",
     "build": "webpack",
-    "build:autolink-editor": "webpack --config webpack.configs/webpack.config.autolink-editor.js"
+    "build:autoLinkEditor": "webpack --config webpack.configs/webpack.config.autolink-editor.js"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.24.8",

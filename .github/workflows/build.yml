@@ -11,7 +11,7 @@ jobs:
 
     strategy:
       matrix:
-        node: [16, 18]
+        library: [autoLinkEditor]
 
     steps:
       - name: Checkout code
@@ -20,21 +20,21 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node }} 
+          node-version: '18' 
       
       - name: Install dependencies
         run: npm install
       
-      - name: Build AutoLinkEditor
-        run: npm run build:autolink-editor
-        working-directory: ./AutoLinkEditor
+      - name: Build ${{ matrix.library }}
+        run: npm run build:${{matrix.library}}
+        working-directory: ./${{matrix.library}}
       
       - name: Run Tests
         run: npm test
       
-      - name: Upload Build Artifacts
+      - name: Upload Build Artifacts for ${{matrix.library}}
         uses: actions/upload-artifact@v3
         with:
-          name: built-libraries
+          name: ${{ matrix.library }}-build
           path: |
-            ./dist/autolink-editor
+            ./dist/${{ matrix.library }}
