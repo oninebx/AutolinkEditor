@@ -8,14 +8,24 @@
 
 ## <a name="introduction">Introduction</a>
 
-## <a name="features">Features</a>
 ### Terminologies
 * **Plain anchor** only includes the href attribute and the text.
-* **Diff-Anchor** stands for the anchor whose href is different from its text.
-* **Same-Anchor** stands for the anchor whose href is same to its text.
+* **Diff-Anchor** stands for the plain anchor whose href is different from its text.
+```
+<a href="https://www.example.com">Example</a>
+```
+* **Same-Anchor** stands for the plain anchor whose href is same to its text.
+```
+<a href="https://www.example.com">https://www.example.com</a>
+```
 
-### Behaviours
-* When processing pasted rich text, only the anchors and text are retained, the anchors, and valid URLs within the text will be converted into plain anchors.
+## <a name="features">Features</a>
+
+### Handling URLs and Anchors in Pasted HyperText
+* Only retain the anchors and text
+* The anchors, and valid URLs within the text will be converted into plain anchors.
+
+### Handling input text
 * It can process the input text and dynamically convert valid URLs within the text into plain anchors.
 
 * When deleting text within an anchor

@@ -24,6 +24,7 @@ window.AutoLinkEditor = (() => {
               console.log('create anchors in keyup');
               const position = contentConvertor.saveSelection(target);
               target.innerHTML= contentConvertor.extractTextAndAnchor(target, inclusion, nodeHandler);
+              inclusion = contentConvertor.indexAnchors(target);
               contentConvertor.restoreSelection(target, position);
             }else {
               pasting = false;
@@ -31,11 +32,11 @@ window.AutoLinkEditor = (() => {
           }, 1000);
           
           target.onkeyup = handleKeyup;
-          target.onblur = initializer.blur(e => {
-            target.innerHTML= contentConvertor.extractTextAndAnchor(target, inclusion, nodeHandler);
-          });
+          // target.onblur = initializer.blur(e => {
+          //   target.innerHTML= contentConvertor.extractTextAndAnchor(target, inclusion, nodeHandler);
+          // });
           target.onfocus = e => {
-            contentConvertor.indexAnchors(target);
+            inclusion = contentConvertor.indexAnchors(target);
           }
         }catch(e){
           console.error(e);

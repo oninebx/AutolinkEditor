@@ -55,10 +55,13 @@ const nodeHandler = (() => {
       if(target && target instanceof HTMLAnchorElement){
         
         if(target.href && target.href.trim() && target.textContent && target.textContent.trim()) {
-          return `<a href="${target.href}">${target.textContent}</a>`;
+          const result = document.createElement("a");
+          result.href = target.href;
+          result.textContent = target.textContent;
+          return result;
         }else{
           console.warn(`skip ${target}, this anchor do not have content`);
-          return "";
+          return null;
         }
       }
       else{
@@ -170,9 +173,15 @@ const nodeHandler = (() => {
           if(child.tagName === 'A') { // anchar element
             const key = child.id === "" ? child.dataset.id : child.id;
             if(inclusion && inclusion[key]){
-              result += handleAnchor(child);
+              const disposedAnchor = handleAnchor(child);
+              if(disposedAnchor){
+                if(disposedAnchor instanceof HTMLAnchorElement) {
+                  disposedAnchor.href = disposedAnchor.textContent;
+                }
+                result += disposedAnchor.outerHTML ?? disposedAnchor;
+              }
             }else {
-              result += makePlainAnchor(child);
+              result += makePlainAnchor(child)?.outerHTML ?? "";
             }
           }else { // other elements
             result += this.extractTextAndAnchor(child, inclusion, nodeHandler);

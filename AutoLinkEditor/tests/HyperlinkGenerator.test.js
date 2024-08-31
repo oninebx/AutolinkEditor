@@ -59,16 +59,19 @@ describe('NodeHandler', () => {
     it('should make a plain anchor if anchor has text is a valid URL', () => {
       // Arrange
       const anchor = document.createElement('a');
-      const validURL = 'https://www.example.com';
+      const validURL = 'https://www.example.com/';
       anchor.textContent = validURL;
       anchor.href = validURL;
       anchor.classList.add("class1");
+      const plainAnchor = document.createElement('a');
+      plainAnchor.href = validURL;
+      plainAnchor.textContent = validURL;
 
       // Act
       const result = nodeHandler.handleAnchor(anchor);
 
       // Assert
-      expect(result).toBe("<a href=\"https://www.example.com/\">https://www.example.com</a>");
+      expect(result.outerHTML).toBe(plainAnchor.outerHTML);
     });
 
     it('should return text content if anchor text is not a valid URL', () => {
@@ -146,7 +149,7 @@ describe('ContentConvertor', () => {
       span1.textContent = "span text";
       target.append(text1, span1, text2);
       const mockNodeHandler = {
-        handleText: jest.fn(),
+        handleText: jest.fn(t => t),
         handleAnchor: jest.fn(),
         makePlainAnchor: jest.fn()
       }
@@ -155,7 +158,44 @@ describe('ContentConvertor', () => {
       const result = contentConvertor.extractTextAndAnchor(target, {}, mockNodeHandler);
 
       // Assert
+      expect(result).toBe("text1span texttext2")
       expect(mockNodeHandler.handleText).toHaveBeenCalledTimes(3);
+    });
+
+    it("should process anchor elements based on inclusion", () => {
+      const div = document.createElement("div");
+      div.innerHTML = `<a id="link1">Link1</a><a id="link2">Link2</a>`;
+      const disposedAnchor = document.createElement("a");
+      const mockNodeHandler = {
+        handleText: jest.fn(),
+        handleAnchor: jest.fn(a => disposedAnchor),
+        makePlainAnchor: jest.fn(m => disposedAnchor)
+      }
+  
+      const inclusion = { link1: true };
+  
+      const result = contentConvertor.extractTextAndAnchor(div, inclusion, mockNodeHandler);
+      
+      expect(result).toBe(`${disposedAnchor.outerHTML}${disposedAnchor.outerHTML}`);
+      expect(mockNodeHandler.handleAnchor).toHaveBeenCalledWith(div.childNodes[0]);
+      expect(mockNodeHandler.makePlainAnchor).toHaveBeenCalledWith(div.childNodes[1]);
+    });
+
+    it("should recurse through child elements correctly", () => {
+      const div = document.createElement("div");
+      div.innerHTML = `<span>Hello, </span><a id="link1">Link1</a><div>World!</div>`;
+      const mockNodeHandler = {
+        handleText: jest.fn(),
+        handleAnchor: jest.fn(),
+        makePlainAnchor: jest.fn()
+      }
+  
+      const inclusion = { link1: true };
+  
+      contentConvertor.extractTextAndAnchor(div, inclusion, mockNodeHandler);
+  
+      expect(mockNodeHandler.handleText).toHaveBeenCalledWith("Hello, ");
+      expect(mockNodeHandler.handleAnchor).toHaveBeenCalledWith(div.querySelector("a"));
     });
 
   });
