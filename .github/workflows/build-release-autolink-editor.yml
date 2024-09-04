@@ -26,7 +26,7 @@ jobs:
         run: npm install
       
       - name: Build autoLinkEditor
-        run: npm run build:autoLinkEditor
+        run: npm run build
         working-directory: ./autoLinkEditor
       
       - name: Run Tests
@@ -41,20 +41,25 @@ jobs:
       #       ./dist/autoLinkEditor
 
       - name: Publish autoLinkEditor to npm
-        run: npm publish
-        working-directory: ./
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16.x'
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm ci
+      - run: npm publish
+        working-directory: ./autoLinkEditor
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Create GitHub Release
-        uses: actions/create-release@v1
-        with:
-          tag_name: ${{ github.ref_name }}  # Use the tag name as the release tag
-          release_name: 'Release ${{ github.ref_name }}'
-          body: |
-            Changes made in this release:
-            ${{ github.event.head_commit.message }}
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Create GitHub Release
+      #   uses: actions/create-release@v1
+      #   with:
+      #     tag_name: ${{ github.ref_name }}  # Use the tag name as the release tag
+      #     release_name: 'Release ${{ github.ref_name }}'
+      #     body: |
+      #       Changes made in this release:
+      #       ${{ github.event.head_commit.message }}
+      #     draft: false
+      #     prerelease: false
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
