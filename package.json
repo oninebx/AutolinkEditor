@@ -1,9 +1,22 @@
 {
+  "name": "autolinkeditor",
+  "version": "1.0.0",
+  "description": "An editor that identifies URLs in the text and automatically converts them into anchor tags.",
+  "main": "./dist/autoLinkEditor.bundle.js",
+  "directories": {
+    "test": "tests"
+  },
   "scripts": {
     "test": "jest",
-    "build": "webpack",
-    "build:autoLinkEditor": "webpack --config webpack.configs/webpack.config.autolink-editor.js"
+    "build": "webpack"
   },
+  "keywords": [
+    "editor",
+    "url",
+    "anchor"
+  ],
+  "author": "Ryan Xu",
+  "license": "ISC",
   "devDependencies": {
     "@babel/preset-env": "^7.24.8",
     "@testing-library/dom": "^10.4.0",

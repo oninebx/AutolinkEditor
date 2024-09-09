@@ -1,0 +1,110 @@
+# git tag -d <tag_name>
+# git push origin --delete <tag_name>
+
+# git tag <tag_name>
+# git push origin <tag_name>
+
+name: Build autoLinkEditor
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18' 
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Run Tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+      
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: autolink-editor
+          path: ./dist/autolink-editor.bundle.js
+  
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Get version
+        id: version
+        uses: ashley-taylor/read-json-property-action@v1.2
+        with:
+          path: ./package.json
+          property: version
+      
+      - name: Get release note
+        id: release_note
+        run: |
+          
+          RELEASE_BODY=$(awk '/## Release Note v${{steps.version.outputs.value}}/{flag=1;next}/----- /{flag=0}flag' README.md)
+
+          if [ -z "$RELEASE_BODY" ]; then
+            RELEASE_BODY="No specific release notes found."
+          fi
+
+          echo "Release body is : $RELEASE_BODY"
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          echo "$RELEASE_BODY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: autolink-editor
+          path: ./
+
+      - name: Release to Github
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: v${{steps.version.outputs.value}}
+          release_name: Release v${{steps.version.outputs.value}}
+          body: |
+            Changes made in this release:
+            ${{ steps.release_note.outputs.body }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifact to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./autolink-editor.bundle.js
+          asset_name: autolink-editor.zip
+          asset_content_type: application/zip
+
+      # - name: Publish autoLinkEditor to npm
+      #   uses: actions/setup-node@v3
+      #   with:
+      #     node-version: '16.x'
+      #     registry-url: 'https://registry.npmjs.org'
+      # - run: npm ci
+      # - run: npm publish
+      #   working-directory: ./autoLinkEditor
+      #   env:
+      #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1,12 +1,10 @@
 const path = require('path');
 
 module.exports = {
-  entry: {
-    'auto-link-editor': './AutoLinkEditor/src/index.js'
-  },
+  entry: './src/index.js',
   output: {
-    filename: '[name].bundle.js',
-    path: path.resolve(__dirname, 'dist')
+    filename: 'autolink-editor.bundle.js',
+    path: path.resolve(__dirname, './dist'),
   },
   module: {
     rules: [
@@ -22,5 +20,5 @@ module.exports = {
       }
     ]
   },
-  mode: 'development'
+  mode: 'production'
 };
