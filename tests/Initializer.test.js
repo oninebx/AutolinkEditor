@@ -39,7 +39,7 @@ describe('initializer', () => {
       target.contentEditable = 'true';
       target.focus = jest.fn();
       initializer.setup(target);
-      expect(target.contentEditable).toBe(true);
+      expect(target.contentEditable).toBe("plaintext-only");
       expect(target.focus).toHaveBeenCalled();
     });
   

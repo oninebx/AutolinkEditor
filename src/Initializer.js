@@ -5,7 +5,7 @@ const initializer = (() => {
     setup: target => {
       if(target && target.contentEditable){
         if(window.getSelection && document.createRange){
-          target.contentEditable = true;
+          target.contentEditable = "plaintext-only";
           target.focus();
         }else{
           throw Error("setup failed: the browser doesn't support getSelection or createRange functions");

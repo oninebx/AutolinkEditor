@@ -50,3 +50,8 @@ This release introduces a lightweight text editor with automatic link detection 
 
 	When editing existing anchor tags, the editor detects changes and updates the anchor’s href attribute if the text is still a valid URL. If not, the anchor tag is automatically converted back into plain text.
 -----
+
+## Release Note v1.0.1
+Fixed the issue of not supporting line breaks.
+
+-----
