@@ -51,9 +51,10 @@ describe('NodeHandler', () => {
   describe('HandleAnchor', () => {
     beforeAll(() => {
       const { window } = new JSDOM('<!doctype html><html><body></body></html>');
+      global.window = window;
       global.document = window.document;
       global.HTMLAnchorElement = window.HTMLAnchorElement;
-      
+      global.HTMLBRElement = window.HTMLBRElement;
     });
 
     it('should make a plain anchor if anchor has text is a valid URL', () => {
@@ -92,6 +93,46 @@ describe('NodeHandler', () => {
       expect(() => nodeHandler.handleAnchor({})).toThrow(TypeError);
       expect(() => nodeHandler.handleAnchor(document.createElement('div'))).toThrow(TypeError);
     });
+  });
+
+  describe('compensateBR', () => {
+    beforeEach(() => {
+      // Reset any mocks or spies before each test
+      jest.clearAllMocks();
+    });
+
+    it('returns "<br />" for an HTMLBRElement', () => {
+      const brElement = document.createElement('br');
+      
+      const result = nodeHandler.compensateBR(brElement);
+      expect(result).toBe('<br />');
+    });
+
+    it('returns "<br />" for an element with display style in ElementsOfBR', () => {
+      const divElement = document.createElement('div');
+      window.getComputedStyle = jest.fn().mockReturnValue({ display: 'block' });
+      
+      const result = nodeHandler.compensateBR(divElement);
+      expect(result).toBe('<br />');
+    });
+
+    it('returns empty string for non-HTMLBRElement and non-ElementsOfBR element', () => {
+      const spanElement = document.createElement('span');
+      
+      window.getComputedStyle = jest.fn().mockReturnValue({ display: 'inline' });
+      
+      const result = nodeHandler.compensateBR(spanElement);
+      expect(result).toBe('');
+    });
+
+    it('returns empty string for null or undefined target', () => {
+      const result = nodeHandler.compensateBR(null);
+      expect(result).toBe('');
+  
+      const resultUndefined = nodeHandler.compensateBR(undefined);
+      expect(resultUndefined).toBe('');
+    });
+
   });
 });
 
@@ -151,7 +192,8 @@ describe('ContentConvertor', () => {
       const mockNodeHandler = {
         handleText: jest.fn(t => t),
         handleAnchor: jest.fn(),
-        makePlainAnchor: jest.fn()
+        makePlainAnchor: jest.fn(),
+        compensateBR: jest.fn(t => ""),
       }
 
       // Act
@@ -169,7 +211,8 @@ describe('ContentConvertor', () => {
       const mockNodeHandler = {
         handleText: jest.fn(),
         handleAnchor: jest.fn(a => disposedAnchor),
-        makePlainAnchor: jest.fn(m => disposedAnchor)
+        makePlainAnchor: jest.fn(m => disposedAnchor),
+        compensateBR: jest.fn(t => "")
       }
   
       const inclusion = { link1: true };
@@ -187,7 +230,8 @@ describe('ContentConvertor', () => {
       const mockNodeHandler = {
         handleText: jest.fn(),
         handleAnchor: jest.fn(),
-        makePlainAnchor: jest.fn()
+        makePlainAnchor: jest.fn(),
+        compensateBR: jest.fn(t => ""),
       }
   
       const inclusion = { link1: true };

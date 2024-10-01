@@ -55,3 +55,8 @@ This release introduces a lightweight text editor with automatic link detection 
 Fixed the issue of not supporting line breaks.
 
 -----
+
+## Release Note v1.0.2
+Fix the issue where the line break format cannot be preserved.
+
+-----

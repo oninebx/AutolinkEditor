@@ -10,9 +10,16 @@ const escapeHtml = (text) => {
   };
   return text.replace(/[&<>"']/g, m => map[m] );
 };
+const ElementsOfBR = new Set([
+  'block',
+  'block flex',
+  'block flow',
+  'block flow-root',
+  'block grid',
+  'list-item',
+]);
 
 const nodeHandler = (() => {
-  
   return {
     handleText: text => {
       let result = '';
@@ -53,7 +60,6 @@ const nodeHandler = (() => {
     },
     makePlainAnchor: target => {
       if(target && target instanceof HTMLAnchorElement){
-        
         if(target.href && target.href.trim() && target.textContent && target.textContent.trim()) {
           const result = document.createElement("a");
           result.href = target.href;
@@ -67,6 +73,13 @@ const nodeHandler = (() => {
       else{
         throw TypeError("make plain anchor error: the target is undefined, null or not a anchor");
       }
+    },
+    compensateBR: target => {
+      if(target && 
+        (target instanceof HTMLBRElement || ElementsOfBR.has(window.getComputedStyle(target).display))){
+          return "<br />";
+      }
+      return "";
     }
   
 };})();
@@ -159,12 +172,12 @@ const nodeHandler = (() => {
         throw TypeError("extract text and anchors failed: invalid nodeHandler, please check if it is an object with handleText, handleAnchor and makePlainAnchor methods.");
       }
 
-      const checkNodeHandler = ["handleText", "handleAnchor", "makePlainAnchor"].every(method => typeof nodeHandler[method] === 'function');
+      const checkNodeHandler = ["handleText", "handleAnchor", "makePlainAnchor", "compensateBR"].every(method => typeof nodeHandler[method] === 'function');
       if(!checkNodeHandler) {
         throw TypeError("extract text and anchors failed: invalid nodeHandler, please check if it is an object with handleText, handleAnchor and makePlainAnchor methods.");
       }
 
-      const {handleText, handleAnchor, makePlainAnchor} = nodeHandler;
+      const {handleText, handleAnchor, makePlainAnchor, compensateBR} = nodeHandler;
       let result = node.nodeType === 3 ? node.data : '';
       node.childNodes.forEach(child => {
         if (child.nodeType === 3) { // text
@@ -172,6 +185,7 @@ const nodeHandler = (() => {
         } else if (child.nodeType === 1) { 
           if(child.tagName === 'A') { // anchar element
             const key = child.id === "" ? child.dataset.id : child.id;
+            
             if(inclusion && inclusion[key]){
               const disposedAnchor = handleAnchor(child);
               if(disposedAnchor){
@@ -183,8 +197,8 @@ const nodeHandler = (() => {
             }else {
               result += makePlainAnchor(child)?.outerHTML ?? "";
             }
-          }else { // other elements
-            result += this.extractTextAndAnchor(child, inclusion, nodeHandler);
+          }else { 
+            result += compensateBR(child) + this.extractTextAndAnchor(child, inclusion, nodeHandler);
           }
         } 
       });
