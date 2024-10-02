@@ -2,7 +2,7 @@
   "name": "autolinkeditor",
   "version": "1.0.2",
   "description": "An editor that identifies URLs in the text and automatically converts them into anchor tags.",
-  "main": "./dist/autoLinkEditor.bundle.js",
+  "main": "./dist/autoLinkEditor.min.js",
   "directories": {
     "test": "tests"
   },

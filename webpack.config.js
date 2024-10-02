@@ -3,7 +3,7 @@ const path = require('path');
 module.exports = {
   entry: './src/index.js',
   output: {
-    filename: 'autolink-editor.bundle.js',
+    filename: 'autolink-editor.min.js',
     path: path.resolve(__dirname, './dist'),
   },
   module: {
